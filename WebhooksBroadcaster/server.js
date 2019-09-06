@@ -5,8 +5,8 @@ var express = require('express');
 var bodyParser = require("body-parser");
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-var fs = require('fs')
-var m = require('moment')
+var fs = require('fs');
+var m = require('moment');
 
 server.listen(port);
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -20,9 +20,10 @@ app.get('/', function (req, res) {
 
 // POST method route
 app.post('/', function (req, res) {
-    if (req.query && req.query.validationtoken) {
+    if (req.query && (req.query.validationToken || req.query.validationtoken)) {
+        var token = req.query.validationToken | req.query.validationtoken;
         // Validating the webhooks subscription
-        console.log('Found validation token: ', req.query.validationtoken);
+        console.log('Found validation token: ', token);
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end(req.query.validationtoken);
     }
@@ -30,7 +31,7 @@ app.post('/', function (req, res) {
         if (typeof req.body.value !== "undefined" && req.body.value !== null) {
             // Getting the webhook and broadcasting it across Socket.IO to the client
             var data = JSON.stringify(req.body.value);
-            console.log(JSON.stringify(req.body.value))
+            console.log(JSON.stringify(req.body.value));
             io.emit('list:changes', data);
             const fileName = __dirname + '/public/webhooksLog.txt';
             // Keeping track of every webhooks
@@ -46,6 +47,8 @@ app.post('/', function (req, res) {
                 fileData = txtFile + '</br></br>' + fileData;
                 fs.writeFileSync(fileName, fileData, { encoding: 'utf8' });
             });
+            res.writeHead(202);
+            res.end(token);
         }
     }
 });
